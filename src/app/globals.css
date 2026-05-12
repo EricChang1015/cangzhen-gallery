@@ -1,0 +1,128 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* 古典中式色系 - 米紙、墨黑、朱印、青瓷 */
+  --background: oklch(0.985 0.005 80);
+  --foreground: oklch(0.18 0.012 60);
+  --card: oklch(0.995 0.003 80);
+  --card-foreground: oklch(0.18 0.012 60);
+  --popover: oklch(0.995 0.003 80);
+  --popover-foreground: oklch(0.18 0.012 60);
+  --primary: oklch(0.42 0.13 30);
+  --primary-foreground: oklch(0.985 0.005 80);
+  --secondary: oklch(0.94 0.012 70);
+  --secondary-foreground: oklch(0.25 0.018 60);
+  --muted: oklch(0.94 0.012 70);
+  --muted-foreground: oklch(0.45 0.015 60);
+  --accent: oklch(0.92 0.025 70);
+  --accent-foreground: oklch(0.22 0.018 60);
+  --destructive: oklch(0.56 0.22 27);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.88 0.012 70);
+  --input: oklch(0.88 0.012 70);
+  --ring: oklch(0.55 0.13 30);
+  --radius: 0.5rem;
+
+  --font-display: var(--font-noto-serif-tc), "Noto Serif TC", "PMingLiU", serif;
+  --font-body: var(--font-noto-sans-tc), "Noto Sans TC", "Microsoft JhengHei",
+    sans-serif;
+}
+
+.dark {
+  --background: oklch(0.16 0.012 60);
+  --foreground: oklch(0.94 0.008 80);
+  --card: oklch(0.20 0.014 60);
+  --card-foreground: oklch(0.94 0.008 80);
+  --popover: oklch(0.20 0.014 60);
+  --popover-foreground: oklch(0.94 0.008 80);
+  --primary: oklch(0.62 0.16 30);
+  --primary-foreground: oklch(0.16 0.012 60);
+  --secondary: oklch(0.28 0.018 60);
+  --secondary-foreground: oklch(0.94 0.008 80);
+  --muted: oklch(0.28 0.018 60);
+  --muted-foreground: oklch(0.68 0.012 70);
+  --accent: oklch(0.32 0.025 60);
+  --accent-foreground: oklch(0.94 0.008 80);
+  --destructive: oklch(0.62 0.20 27);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.32 0.018 60);
+  --input: oklch(0.32 0.018 60);
+  --ring: oklch(0.62 0.16 30);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
+  }
+}
+
+/* 印章風格紅章 */
+.seal {
+  font-family: var(--font-display);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.15rem 0.5rem;
+  border-radius: 2px;
+  letter-spacing: 0.2em;
+  display: inline-block;
+}
+
+/* 宣紙背景紋理 */
+.paper-bg {
+  background-color: var(--background);
+  background-image: radial-gradient(
+      circle at 25% 25%,
+      rgba(120, 80, 40, 0.025) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 75% 75%,
+      rgba(120, 80, 40, 0.025) 0%,
+      transparent 50%
+    );
+}
