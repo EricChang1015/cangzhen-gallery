@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -17,11 +17,13 @@ import { ITEM_STATUS } from "@/lib/constants";
 interface Props {
   categories: Category[];
   item?: Item;
+  /** 由 ImageManager 傳入的已上傳圖片 URL，供 AI 以圖識物 */
+  uploadedImageUrls?: string[];
 }
 
 const initialState: ItemFormState = { ok: false };
 
-export function ItemForm({ categories, item }: Props) {
+export function ItemForm({ categories, item, uploadedImageUrls = [] }: Props) {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(upsertItemAction, initialState);
   const [aiDesc, setAiDesc] = useState(item?.ai_description ?? "");
@@ -40,14 +42,18 @@ export function ItemForm({ categories, item }: Props) {
   const [price, setPrice] = useState(item?.price ?? "");
   const [aiLoading, startAi] = useTransition();
 
-  if (state.ok && state.itemId && !item) {
+  useEffect(() => {
     // 新增成功，跳到編輯頁可繼續上傳圖片
-    router.push(`/admin/items/${state.itemId}/edit`);
-  }
+    if (state.ok && state.itemId && !item) {
+      router.push(`/admin/items/${state.itemId}/edit`);
+    }
+  }, [state.ok, state.itemId, item, router]);
+
+  const hasImages = uploadedImageUrls.length > 0;
 
   function handleAiAssist() {
-    if (!title.trim()) {
-      toast.error("請先輸入品名再使用 AI 補述");
+    if (!title.trim() && !hasImages) {
+      toast.error("請先輸入品名或上傳圖片再使用 AI 補述");
       return;
     }
     startAi(async () => {
@@ -57,7 +63,7 @@ export function ItemForm({ categories, item }: Props) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            title,
+            title: title || "（未命名藏品）",
             summary,
             category: categoryName,
             era,
@@ -65,6 +71,7 @@ export function ItemForm({ categories, item }: Props) {
             dimensions,
             weight,
             provenance,
+            ...(hasImages ? { imageUrls: uploadedImageUrls.slice(0, 4) } : {}),
           }),
         });
         const data = await res.json();
@@ -200,7 +207,11 @@ export function ItemForm({ categories, item }: Props) {
               disabled={aiLoading}
             >
               <Sparkles className="size-4" />
-              {aiLoading ? "AI 撰寫中…" : "AI 一鍵撰寫"}
+              {aiLoading
+                ? "AI 撰寫中…"
+                : hasImages
+                  ? "以圖片 AI 生成描述"
+                  : "AI 一鍵撰寫"}
             </Button>
           </div>
           <Textarea

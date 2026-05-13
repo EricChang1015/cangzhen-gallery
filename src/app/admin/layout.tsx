@@ -7,17 +7,18 @@ import {
   LayoutDashboard,
   MessageCircle,
   Settings,
+  Users,
 } from "lucide-react";
 import { Logo } from "@/components/site/logo";
 import { Button } from "@/components/ui/button";
 import { getCurrentProfile } from "@/lib/auth";
-import { Toaster } from "@/components/ui/sonner";
 
 const NAV = [
   { href: "/admin", label: "儀表板", icon: LayoutDashboard, exact: true },
   { href: "/admin/items", label: "藏品管理", icon: ImageIcon },
   { href: "/admin/categories", label: "分類管理", icon: FolderTree },
   { href: "/admin/messages", label: "訊息收件匣", icon: MessageCircle },
+  { href: "/admin/users", label: "使用者管理", icon: Users },
   { href: "/admin/settings", label: "站點設定", icon: Settings },
 ];
 
@@ -81,7 +82,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           ))}
         </nav>
         <main className="flex-1 p-4 md:p-8 bg-background overflow-x-hidden">{children}</main>
-        <Toaster />
       </div>
     </div>
   );

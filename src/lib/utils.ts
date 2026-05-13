@@ -19,8 +19,9 @@ export function slugify(text: string): string {
   const base = text
     .toLowerCase()
     .trim()
-    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
+    .replace(/^-+|-+$/g, "")
     .slice(0, 40);
   return base ? `${base}-${random}` : random;
 }

@@ -91,7 +91,13 @@ export async function upsertItemAction(
 
   let resultId = id;
   if (id) {
-    const { error } = await supabase.from("items").update(payload).eq("id", id);
+    // 若現有 slug 含有非 ASCII 字元（例如中文），自動重新產生合法 slug
+    const updatePayload: typeof payload & { slug?: string } = { ...payload };
+    const { data: existing } = await supabase.from("items").select("slug").eq("id", id).maybeSingle();
+    if (existing?.slug && /[^\x00-\x7F]/.test(existing.slug)) {
+      updatePayload.slug = slugify(payload.title);
+    }
+    const { error } = await supabase.from("items").update(updatePayload).eq("id", id);
     if (error) return { ok: false, message: error.message };
   } else {
     const slug = slugify(payload.title);
@@ -112,6 +118,20 @@ export async function upsertItemAction(
     if (row?.slug) revalidatePath(`/items/${row.slug}`);
   }
   return { ok: true, message: "已儲存", itemId: resultId ?? undefined };
+}
+
+export async function createDraftItemAction(): Promise<{ ok: boolean; itemId?: string; message?: string }> {
+  const admin = await requireAdmin();
+  if (!admin) return { ok: false, message: "未授權" };
+  const supabase = await createSupabaseServerClient();
+  const slug = slugify("draft");
+  const { data, error } = await supabase
+    .from("items")
+    .insert({ title: "（草稿）", slug, status: "draft", created_by: admin.id })
+    .select("id")
+    .single();
+  if (error || !data) return { ok: false, message: error?.message ?? "建立草稿失敗" };
+  return { ok: true, itemId: data.id };
 }
 
 export async function deleteItemAction(itemId: string) {

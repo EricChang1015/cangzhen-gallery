@@ -49,7 +49,7 @@ export default function RootLayout({
       className={`${sansTC.variable} ${serifTC.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="paper-bg min-h-full flex flex-col">
+      <body className="paper-bg min-h-full flex flex-col" suppressHydrationWarning>
         {children}
         <Toaster />
       </body>
