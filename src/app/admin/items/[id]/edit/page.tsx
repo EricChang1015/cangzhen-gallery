@@ -2,8 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ItemForm } from "@/components/admin/item-form";
-import { ImageManager } from "@/components/admin/image-manager";
+import { EditItemLayout } from "@/components/admin/edit-item-layout";
 import { DeleteItemButton } from "@/components/admin/delete-item-button";
 import { listCategories } from "@/lib/queries";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -56,15 +55,11 @@ export default async function EditItemPage({
         </p>
       </header>
 
-      <section>
-        <h2 className="font-display text-xl mb-3">藏品圖片</h2>
-        <ImageManager itemId={typedItem.id} initialImages={typedImgs} />
-      </section>
-
-      <section>
-        <h2 className="font-display text-xl mb-3">藏品資訊</h2>
-        <ItemForm categories={categories} item={typedItem} />
-      </section>
+      <EditItemLayout
+        item={typedItem}
+        initialImages={typedImgs}
+        categories={categories}
+      />
     </div>
   );
 }

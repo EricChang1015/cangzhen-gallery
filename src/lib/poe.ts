@@ -21,9 +21,11 @@ export interface ItemBriefInput {
   dimensions?: string | null;
   weight?: string | null;
   provenance?: string | null;
+  /** 已上傳的藏品圖片公開 URL，傳入後 AI 將以圖識物 */
+  imageUrls?: string[];
 }
 
-/** 給 POE AI 的 system prompt 與 user prompt 組裝。 */
+/** 給 POE AI 的 system prompt 與 user prompt 組裝。支援純文字與含圖片（Vision）兩種模式。 */
 export function buildAiPrompt(item: ItemBriefInput) {
   const fields: string[] = [];
   if (item.category) fields.push(`分類：${item.category}`);
@@ -38,22 +40,32 @@ export function buildAiPrompt(item: ItemBriefInput) {
     ? `已知資訊如下：\n- ${fields.join("\n- ")}`
     : "藏家僅提供品名，請依品名常識進行考證。";
 
+  const hasImages = Array.isArray(item.imageUrls) && item.imageUrls.length > 0;
+  const textPrompt = `請為下列藏品撰寫詳細介紹：\n品名：${item.title}\n${knownInfo}\n\n請輸出 350 ～ 600 字之間，可分段。文末加上一行：『＊本介紹由 AI 依公開資料整理，實品請以實物為準。』`;
+
+  const systemContent = [
+    "你是「藏珍閣」線上典藏館的中文藝品鑑賞顧問。",
+    "請以繁體中文、典雅而易讀的口吻撰寫藏品介紹文，目標讀者為一般華文藏家與愛好者。",
+    "若有需要可援引常見典故、產地、工藝特色，並標註資訊為傳說或推測，避免捏造具體拍賣紀錄。",
+    "禁止使用 Markdown 標題（# 與 ##），可使用粗體、條列、段落分隔。",
+    "輸出結構建議：藏品概述 → 工藝／材質特徵 → 文化背景／典故 → 鑑賞要點 → 收藏建議。",
+    "若資訊不足請明確說明「此件之確切年代仍待考證」。",
+    ...(hasImages ? ["使用者已上傳藏品圖片，請務必結合圖片中可見的器形、紋飾、色澤進行描述，以圖識物。"] : []),
+  ].join("\n");
+
+  const userContent = hasImages
+    ? [
+        { type: "text" as const, text: textPrompt },
+        ...(item.imageUrls ?? []).slice(0, 4).map((url) => ({
+          type: "image_url" as const,
+          image_url: { url, detail: "high" as const },
+        })),
+      ]
+    : textPrompt;
+
   return [
-    {
-      role: "system" as const,
-      content: [
-        "你是「藏珍閣」線上典藏館的中文藝品鑑賞顧問。",
-        "請以繁體中文、典雅而易讀的口吻撰寫藏品介紹文，目標讀者為一般華文藏家與愛好者。",
-        "若有需要可援引常見典故、產地、工藝特色，並標註資訊為傳說或推測，避免捏造具體拍賣紀錄。",
-        "禁止使用 Markdown 標題（# 與 ##），可使用粗體、條列、段落分隔。",
-        "輸出結構建議：藏品概述 → 工藝／材質特徵 → 文化背景／典故 → 鑑賞要點 → 收藏建議。",
-        "若資訊不足請明確說明「此件之確切年代仍待考證」。",
-      ].join("\n"),
-    },
-    {
-      role: "user" as const,
-      content: `請為下列藏品撰寫詳細介紹：\n品名：${item.title}\n${knownInfo}\n\n請輸出 350 ～ 600 字之間，可分段。文末加上一行：『＊本介紹由 AI 依公開資料整理，實品請以實物為準。』`,
-    },
+    { role: "system" as const, content: systemContent },
+    { role: "user" as const, content: userContent },
   ];
 }
 

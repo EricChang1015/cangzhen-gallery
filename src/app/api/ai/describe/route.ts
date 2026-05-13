@@ -16,6 +16,7 @@ const inputSchema = z.object({
   dimensions: z.string().nullable().optional(),
   weight: z.string().nullable().optional(),
   provenance: z.string().nullable().optional(),
+  imageUrls: z.array(z.string().url()).max(4).optional(),
 });
 
 export async function POST(req: Request) {
@@ -33,9 +34,10 @@ export async function POST(req: Request) {
   }
   const settings = await getSettings();
   try {
-    const text = await generateItemDescription(parsed.data, {
-      model: settings.ai_model,
-    });
+    const text = await generateItemDescription(
+      { ...parsed.data, imageUrls: parsed.data.imageUrls },
+      { model: settings.ai_model },
+    );
     return NextResponse.json({ description: text });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "AI 服務異常";

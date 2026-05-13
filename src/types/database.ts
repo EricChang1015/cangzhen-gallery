@@ -7,6 +7,8 @@ export interface Profile {
   display_name: string | null;
   avatar_url: string | null;
   role: UserRole;
+  is_banned: boolean;
+  banned_reason: string | null;
   created_at: string;
   updated_at: string;
 }
