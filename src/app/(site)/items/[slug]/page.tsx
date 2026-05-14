@@ -164,7 +164,7 @@ export default async function ItemDetailPage({ params }: PageProps) {
         <h2 className="font-display text-xl flex items-center gap-2">
           <MessageCircle className="size-4 text-primary" /> 藏家留言
         </h2>
-        <CommentSection itemId={item.id} loggedIn={!!profile} />
+        <CommentSection itemId={item.id} loggedIn={!!profile} isAdmin={isAdmin} />
       </section>
     </article>
   );

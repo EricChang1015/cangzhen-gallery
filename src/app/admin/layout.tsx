@@ -10,14 +10,18 @@ import {
   Users,
 } from "lucide-react";
 import { Logo } from "@/components/site/logo";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getCurrentProfile } from "@/lib/auth";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 const NAV = [
   { href: "/admin", label: "儀表板", icon: LayoutDashboard, exact: true },
   { href: "/admin/items", label: "藏品管理", icon: ImageIcon },
   { href: "/admin/categories", label: "分類管理", icon: FolderTree },
-  { href: "/admin/messages", label: "訊息收件匣", icon: MessageCircle },
+  { href: "/admin/messages", label: "訊息收件匣", icon: MessageCircle, key: "messages" as const },
   { href: "/admin/users", label: "使用者管理", icon: Users },
   { href: "/admin/settings", label: "站點設定", icon: Settings },
 ];
@@ -37,6 +41,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     );
   }
 
+  const supabase = await createSupabaseServerClient();
+  const { data: unreadRows } = await supabase
+    .from("conversations")
+    .select("unread_for_admin")
+    .gt("unread_for_admin", 0);
+  const totalUnread = (unreadRows ?? []).reduce(
+    (sum, r) => sum + (r.unread_for_admin ?? 0),
+    0,
+  );
+
   return (
     <div className="min-h-screen flex">
       <aside className="hidden md:flex flex-col w-60 border-r bg-card/40">
@@ -51,7 +65,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               className="flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors"
             >
               <n.icon className="size-4" />
-              {n.label}
+              <span className="flex-1">{n.label}</span>
+              {n.key === "messages" && totalUnread > 0 && (
+                <Badge variant="destructive" className="px-1.5 py-0 h-5 min-w-5 justify-center">
+                  {totalUnread}
+                </Badge>
+              )}
             </Link>
           ))}
         </nav>
@@ -78,6 +97,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             >
               <n.icon className="size-3" />
               {n.label}
+              {n.key === "messages" && totalUnread > 0 && (
+                <Badge variant="destructive" className="ml-1 px-1.5 py-0 h-4 min-w-4 justify-center text-[10px]">
+                  {totalUnread}
+                </Badge>
+              )}
             </Link>
           ))}
         </nav>
