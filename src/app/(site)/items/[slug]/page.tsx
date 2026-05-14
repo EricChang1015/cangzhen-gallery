@@ -12,7 +12,7 @@ import { ContactAdminButton } from "@/components/site/contact-admin-button";
 import { getItemBySlug } from "@/lib/queries";
 import { ITEM_STATUS, SITE } from "@/lib/constants";
 import { env } from "@/lib/env";
-import { formatDate } from "@/lib/utils";
+import { formatDate, simpleMarkdown } from "@/lib/utils";
 import { getCurrentProfile } from "@/lib/auth";
 
 interface PageProps {
@@ -152,9 +152,10 @@ export default async function ItemDetailPage({ params }: PageProps) {
           <h2 className="font-display text-xl flex items-center gap-2">
             <Sparkles className="size-4 text-primary" /> 藏品介紹
           </h2>
-          <div className="prose prose-zinc max-w-none whitespace-pre-line text-foreground/90 leading-8 text-base">
-            {item.ai_description}
-          </div>
+          <div
+            className="prose prose-zinc max-w-none text-foreground/90 leading-8 text-base"
+            dangerouslySetInnerHTML={{ __html: simpleMarkdown(item.ai_description) }}
+          />
         </section>
       )}
 

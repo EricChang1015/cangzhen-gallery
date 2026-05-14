@@ -41,7 +41,7 @@ export function buildAiPrompt(item: ItemBriefInput) {
     : "藏家僅提供品名，請依品名常識進行考證。";
 
   const hasImages = Array.isArray(item.imageUrls) && item.imageUrls.length > 0;
-  const textPrompt = `請為下列藏品撰寫詳細介紹：\n品名：${item.title}\n${knownInfo}\n\n請輸出 350 ～ 600 字之間，可分段。文末加上一行：『＊本介紹由 AI 依公開資料整理，實品請以實物為準。』`;
+  const textPrompt = `請為下列藏品撰寫詳細介紹：\n品名：${item.title}\n${knownInfo}\n\n請輸出 350 ～ 600 字之間，可分段。`;
 
   const systemContent = [
     "你是「藏珍閣」線上典藏館的中文藝品鑑賞顧問。",
