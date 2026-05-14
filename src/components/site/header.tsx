@@ -53,17 +53,15 @@ export async function SiteHeader() {
           )}
           {profile ? (
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring">
-                  <Avatar className="h-9 w-9">
-                    {profile.avatar_url ? (
-                      <AvatarImage src={profile.avatar_url} alt={profile.display_name ?? ""} />
-                    ) : null}
-                    <AvatarFallback>
-                      {(profile.display_name ?? "藏").slice(0, 1)}
-                    </AvatarFallback>
-                  </Avatar>
-                </button>
+              <DropdownMenuTrigger className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring">
+                <Avatar className="h-9 w-9">
+                  {profile.avatar_url ? (
+                    <AvatarImage src={profile.avatar_url} alt={profile.display_name ?? ""} />
+                  ) : null}
+                  <AvatarFallback>
+                    {(profile.display_name ?? "藏").slice(0, 1)}
+                  </AvatarFallback>
+                </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuLabel>
