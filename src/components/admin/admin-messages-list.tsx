@@ -26,12 +26,16 @@ export function AdminMessagesList({ initialConversations }: Props) {
     const supabase = createSupabaseBrowserClient();
 
     async function refetch() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("conversations")
         .select(
           "id, subject, last_message_at, unread_for_admin, guest_id, profiles:profiles!conversations_guest_id_fkey(display_name, avatar_url)",
         )
         .order("last_message_at", { ascending: false });
+      if (error) {
+        console.error("[admin-messages-list] 重新載入對話列表失敗", error);
+        return;
+      }
       if (!data) return;
       type RawConv = {
         id: string;

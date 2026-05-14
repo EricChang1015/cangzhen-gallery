@@ -70,7 +70,11 @@ export function CommentSection({ itemId, loggedIn, isAdmin = false }: Props) {
 
       const { data, error } = await query;
       if (!isMounted) return;
-      if (!error && data) setComments(data as unknown as CommentRow[]);
+      if (error) {
+        console.error("[comment-section] 載入留言失敗", error);
+      } else if (data) {
+        setComments(data as unknown as CommentRow[]);
+      }
       setLoading(false);
     })();
 

@@ -9,12 +9,15 @@ export const metadata = { title: "訊息收件匣" };
 
 export default async function AdminMessagesIndex() {
   const supabase = await createSupabaseServerClient();
-  const { data: rawConvs } = await supabase
+  const { data: rawConvs, error: convError } = await supabase
     .from("conversations")
     .select(
       "id, subject, last_message_at, unread_for_admin, guest_id, profiles:profiles!conversations_guest_id_fkey(display_name, avatar_url)",
     )
     .order("last_message_at", { ascending: false });
+  if (convError) {
+    console.error("[admin/messages] 載入對話列表失敗", convError);
+  }
 
   type RawConv = {
     id: string;
