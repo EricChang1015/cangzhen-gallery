@@ -40,7 +40,11 @@ yarn-error.log*
 # cursor
 .specstory/
 .cursorindexingignore
+.vscode/
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# idea
+.idea/
