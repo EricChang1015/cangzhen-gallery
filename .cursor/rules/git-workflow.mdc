@@ -1,0 +1,70 @@
+---
+description: Git commit 時機與格式規範（每次修改驗證通過後必須 commit）
+alwaysApply: true
+---
+
+# Git Workflow 規範
+
+## 何時 commit
+
+**每次修改完畢、驗證通過後，立即執行 git commit。** 不要累積多個功能再一起提交。
+
+### 驗證清單（commit 前先確認）
+- [ ] TypeScript 無型別錯誤（`npm run typecheck`）
+- [ ] ESLint 無新增 error（`npm run lint`）
+- [ ] 若改動 schema → `src/types/database.ts` 已同步更新
+- [ ] 若改動 Server Action → 有加 `revalidatePath`
+- [ ] 若改動 UI → 無明顯 console error / hydration 警告
+
+### 只要使用者沒有明確要求，不要自行 push 到 remote。
+
+## Commit Message 格式
+
+採用 **Conventional Commits** 風格，主題用繁體中文說明「做了什麼」：
+
+```
+<type>: <繁中說明>
+
+[選填: 詳細說明]
+```
+
+| type | 用途 |
+|---|---|
+| `feat` | 新功能 |
+| `fix` | 修正 bug |
+| `refactor` | 重構（無功能變動） |
+| `style` | 純樣式調整 |
+| `docs` | 文件、readme、rules 更新 |
+| `chore` | 雜務（依賴更新、config 調整） |
+| `db` | 資料庫 schema / migration 修改 |
+
+### 範例
+```
+feat: 新增藏品瀏覽計數功能
+fix: 修復上傳大圖時縮圖 sort_order 錯位問題
+db: 新增 profiles.is_banned 欄位與留言 policy 更新
+docs: 新增 AGENTS.md 與 Cursor rules
+```
+
+## 流程
+
+```bash
+# 1. 確認變更範圍
+git status
+git diff
+
+# 2. 加入暫存
+git add <相關檔案>   # 優先精確加檔，不要無腦 git add .
+
+# 3. commit
+git commit -m "type: 繁中說明"
+
+# 4. 確認
+git status   # 確保 working tree clean
+```
+
+## 不該進 commit 的東西
+- `.env.local`（含真實金鑰）
+- `node_modules/`
+- `.next/`（build 產物）
+- 任何包含 API key / secret 的設定檔

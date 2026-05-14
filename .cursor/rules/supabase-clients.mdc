@@ -1,0 +1,52 @@
+---
+description: Supabase 三種 client 的選用時機與安全規則
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Supabase Client 選用規則
+
+本專案有 **3 種 client**，互相不可亂用。
+
+| Client 工廠 | 來源 | 使用場景 | RLS |
+|---|---|---|---|
+| `createSupabaseBrowserClient()` | `@/lib/supabase/client` | `"use client"` 元件、Realtime 訂閱 | ✅ 受限 |
+| `createSupabaseServerClient()` | `@/lib/supabase/server` | RSC / Server Action / Route Handler | ✅ 受限（帶 user cookie） |
+| `createSupabaseAdminClient()` | `@/lib/supabase/admin` | 必須**繞過 RLS** 的 server 操作（如刪 storage 檔） | ❌ 跳過 |
+
+## 嚴格規則
+
+1. **`createSupabaseAdminClient` 絕不可被 `"use client"` 檔案 import**。
+   它使用 `SUPABASE_SERVICE_ROLE_KEY`，洩漏會讓全資料庫被任意操作。
+
+2. **Server Action / Route Handler 預設用 server client**，只在以下情境改用 admin：
+   - 需要刪除 / 寫入 storage（bucket: `items`）
+   - 需要繞過 RLS 直接操作 `auth.users`、profiles、跨使用者資料
+
+3. **Browser client 不要用來執行寫入敏感資源**。寫入應走 Server Action 或 `/api/*`。
+
+4. **Realtime 訂閱**只能在 client：
+   ```ts
+   "use client";
+   const supabase = createSupabaseBrowserClient();
+   const channel = supabase.channel(`comments-${itemId}`)
+     .on("postgres_changes", {...}, handler)
+     .subscribe();
+   return () => { supabase.removeChannel(channel); };  // 必清理
+   ```
+
+## ❌ 反例
+```ts
+"use client";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"; // 嚴重洩漏
+```
+
+## ✅ 正例
+```ts
+// app/api/upload/route.ts
+const admin = await requireAdmin();           // 1. 先驗權
+if (!admin) return NextResponse.json({ error: "未授權" }, { status: 401 });
+const supabase = await createSupabaseServerClient();  // 2. 帶 cookie 操作 DB
+const adminCli = createSupabaseAdminClient();         // 3. 只在需要繞 RLS 時用
+await adminCli.storage.from("items").upload(path, buffer, {...});
+```

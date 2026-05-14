@@ -1,0 +1,59 @@
+---
+description: 前端元件 / 樣式 / RSC 慣例（Tailwind v4 + shadcn 風 + Next.js App Router）
+globs: src/{components,app}/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# UI / 元件慣例
+
+## 元件分類（請放對位置）
+
+| 目錄 | 用途 | 範例 |
+|---|---|---|
+| `src/components/ui/` | 純展示、可在前後台共用的基礎元件（shadcn 風） | `button.tsx`、`dialog.tsx` |
+| `src/components/site/` | 公開頁專用 | `header.tsx`、`comment-section.tsx`、`item-card.tsx` |
+| `src/components/admin/` | 後台專用 | `item-form.tsx`、`image-manager.tsx` |
+
+新增基礎元件請仿 `button.tsx`：使用 `class-variance-authority` (`cva`) 定義 variants，外加 `cn()` 合併 className。
+
+## RSC vs Client
+
+- **預設為 Server Component**（不寫 `"use client"`）。
+- **必要時才加 `"use client"`**：useState / useEffect / 事件 handler / 瀏覽器 API / Realtime。
+- Server Component 可直接 `await createSupabaseServerClient()` 取資料；不要把資料庫呼叫包進 client 元件。
+- Server Component 把資料抓好後**以 props 傳給** client 元件（見 `comment-section.tsx` 接收 `itemId / loggedIn / isAdmin`）。
+
+## 樣式
+
+- 一律用 **Tailwind v4 utility classes**，色彩 token 使用 `bg-card / text-muted-foreground / border` 等語意色。
+- 合併 className 用 `cn()`（來自 `@/lib/utils`，內部是 `twMerge(clsx(...))`）。
+- **不要寫內聯 `style={{...}}`**（除非為動態計算值）。
+- 全域樣式 / 字型 / 主題色寫在 `src/app/globals.css`（Tailwind v4 用 `@theme {}`）。
+
+## 表單
+
+- Client form 用 `react-hook-form` + `zodResolver`。
+- Server Action form 用 `useFormState` + `useFormStatus`，state 型別 `{ ok, message, errors }`。
+- 表單元件使用 `@/components/ui/{input,textarea,label,select,switch}`。
+
+## 圖片
+
+- 使用 `next/image`；Supabase 圖片 host 已加進 `next.config.ts` 的 `remotePatterns`。
+- 列表用 `thumb_url`（縮圖）；單品 / lightbox 用 `url`（壓縮主圖）。
+
+## Toast / 互動回饋
+
+- 全域 `<Toaster />` 已掛在 root layout。
+- `import { toast } from "sonner"`：成功 `toast.success("已儲存")`、錯誤 `toast.error("失敗訊息")`。
+- 確認對話框使用瀏覽器內建 `confirm(...)` 或 `@/components/ui/dialog`，不要自製。
+
+## 命名
+
+- 檔名：`kebab-case.tsx`（`item-form.tsx`）。
+- 元件名：`PascalCase`（`ItemForm`）。
+- props 介面：放在元件檔案內 `interface Props { ... }` 或具名 `interface ItemFormProps`。
+
+## 文案
+
+- 所有 UI 文字使用**繁體中文**。
+- 動詞優先：「儲存」「新增藏品」「送出留言」（避免「Submit」「OK」）。

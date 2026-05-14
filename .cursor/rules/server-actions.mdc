@@ -1,0 +1,67 @@
+---
+description: Server Action 與 Route Handler 撰寫慣例（驗權 / 驗資料 / 失效快取）
+globs: src/app/**/{actions,route}.ts
+alwaysApply: false
+---
+
+# Server Action / Route Handler 慣例
+
+## 三段式骨架（缺一不可）
+
+```ts
+"use server";  // Server Action 第一行；Route Handler 不需要
+
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { requireAdmin } from "@/lib/auth";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+const schema = z.object({ /* ... */ });
+
+export async function someAction(prev: State, formData: FormData): Promise<State> {
+  // 1. 驗權
+  const admin = await requireAdmin();
+  if (!admin) return { ok: false, message: "未授權" };
+
+  // 2. 驗資料（zod）
+  const parsed = schema.safeParse(rawFromFormData);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: "資料驗證失敗",
+      errors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  // 3. 寫入 DB
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("xxx").update(parsed.data).eq("id", id);
+  if (error) return { ok: false, message: error.message };
+
+  // 4. 失效相關快取
+  revalidatePath("/admin/xxx");
+  revalidatePath("/xxx");
+  return { ok: true, message: "已儲存" };
+}
+```
+
+## 強制規則
+
+- **回傳型別統一**：`{ ok: boolean; message?: string; errors?: Record<string, string[]>; ... }`。
+  Route Handler 則用 `NextResponse.json({...}, { status })`。
+- **權限**：所有 admin 操作必須 `requireAdmin()`；guest 操作可改用 `getCurrentUser()` 後比對 `auth.uid()`。
+- **驗資料**：`FormData` 取出後一律先過 `zod.safeParse`，不要直接信任前端。
+- **空字串轉 null**：DB 欄位可空時，前端送 "" 要轉 `null`（見 `admin/items/actions.ts` 的 `emptyToNull`）。
+- **revalidatePath**：所有寫入後務必失效相關路徑。常見組合：
+  - 藏品：`/admin/items`、`/items`、`/`、`/items/${slug}`
+  - 留言：`/items/${slug}`
+  - 使用者：`/admin/users`
+  - 設定：`/admin/settings`、`/`
+- **錯誤訊息中文化**：直接寫繁中（與專案語言一致）。
+- **redirect 與 revalidate 並用時**：先 `revalidatePath` 再 `redirect`。
+
+## Route Handler 額外注意
+
+- 涉及 `sharp` 的 route 需 `export const runtime = "nodejs"`（不能用 edge）。
+- 長時間任務（AI 補述、圖片處理）加 `export const maxDuration = 60`（Vercel Hobby 上限）。
+- Body 解析失敗要包 try / `.catch(() => ({}))` 避免 500。

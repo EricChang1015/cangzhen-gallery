@@ -1,0 +1,61 @@
+---
+description: Supabase 資料表 / RLS 速查與 migration 寫法
+globs: supabase/**/*.sql
+alwaysApply: false
+---
+
+# Supabase Schema 與 Migration 規範
+
+## 表 / Enum 速查
+
+| Table | 主要欄位 | 備註 |
+|---|---|---|
+| `profiles` | `id` (= `auth.users.id`)、`role`、`is_banned` | 註冊時 trigger 自動建立 |
+| `categories` | `slug` unique、`sort_order` | 種子資料見 0001_init.sql 末段 |
+| `items` | `slug` unique、`status`、`cover_image_url`、`price_visible` | 三個 index：status / category / published_at |
+| `item_images` | `item_id` FK、`url` / `thumb_url` / `storage_path`、`sort_order` | 刪 row 同步刪 storage 檔（Server Action 處理） |
+| `comments` | `status`、被 ban 的人禁止 insert（policy） | Realtime 訂閱使用 |
+| `conversations` | `unique(guest_id)` 每個 guest 唯一 | unread 計數由 trigger 維護 |
+| `messages` | trigger 更新 conversation 的 `last_message_at` 與 unread |
+| `settings` | KV (`key text pk`, `value jsonb`) | 公開可讀，僅 admin 可寫 |
+
+**Enums**：`user_role`、`item_status`、`comment_status`。
+
+## Migration 撰寫規範
+
+1. 檔名：`000X_<short_name>.sql`（流水號連續，**不要重編號**）。
+2. 全部 statement 必須**冪等**：
+   - 表：`create table if not exists`
+   - 欄位：`alter table ... add column if not exists`
+   - Enum：包 `do $$ begin ... exception when duplicate_object then null; end $$`
+   - Function：`create or replace function`
+   - Trigger：先 `drop trigger if exists` 再 `create trigger`
+   - Policy：先 `drop policy if exists` 再 `create policy`
+3. **新表必須 `enable row level security`**，否則公開可讀寫。
+4. **動到 schema 後**，同步更新 `src/types/database.ts`（手寫，無自動產生）。
+
+## RLS Policy 心法
+
+| 資源類型 | 公式 |
+|---|---|
+| 公開讀取 | `for select using (true)` |
+| 條件公開讀取（如 published item）| `for select using (status = 'published' or public.is_admin(auth.uid()))` |
+| 僅 admin 寫入 | `for all using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()))` |
+| 使用者寫自己 | `with check (auth.uid() = user_id)` |
+| 跨表參照（如 messages 屬於某 conversation）| `exists (select 1 from ... where ...)` |
+
+## 常用 Helper
+
+- `public.is_admin(uid)` — security definer，檢查 `profiles.role = 'admin'`
+- `public.handle_new_user()` — auth.users insert trigger，自動建 profile
+- `public.touch_updated_at()` — before update trigger，更新 `updated_at`
+- `public.handle_new_message()` — 新訊息更新 conversation 計數
+- `public.promote_to_admin(email)` — 將指定 email 設為 admin（在 0002 migration）
+
+## Storage
+
+只有一個 bucket：**`items`**（public）。
+- 讀：所有人
+- 寫 / 刪：admin（`bucket_id = 'items' and is_admin(auth.uid())`）
+- 路徑慣例：`<item_id>/<timestamp>_<basename>.webp`
+- 縮圖：`<item_id>/<timestamp>_<basename>_thumb.webp`

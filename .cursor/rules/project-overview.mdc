@@ -1,0 +1,33 @@
+---
+description: 藏珍閣專案核心定位與必讀文件指引（每次對話都載入）
+alwaysApply: true
+---
+
+# 藏珍閣 (Cangzhen Gallery) — 核心規約
+
+## 專案定位
+古玩藝品線上典藏網站。**單一管理員（父親）**上架，訪客瀏覽 / 留言 / 私訊。
+部署目標：**Vercel Hobby**（注意 serverless 限制，不要引入需 long-running process 的方案）。
+
+## 技術棧（鎖死，不要建議遷移）
+Next.js 16 (App Router + Server Actions) · React 19 · TypeScript strict ·
+Tailwind v4 + 自製 shadcn 風 · Supabase (Postgres/Auth/Storage/Realtime) ·
+sharp (webp) · OpenAI SDK → POE (`https://api.poe.com/v1`) · zod · sonner · lucide-react
+
+## 必讀文件（任何修改前先讀）
+1. **`AGENTS.md`** — 專案地圖、目錄結構、慣例、陷阱、快速定位表
+2. **`src/types/database.ts`** — 全部資料表型別
+3. **`supabase/migrations/0001_init.sql`** — Schema + RLS
+
+## 強制規約
+- **語言**：所有 UI 文字、註解、commit message 一律使用**繁體中文**。
+- **環境變數**：一律 `process.env.NEXT_PUBLIC_XXX` 直接屬性存取，不可用 `process.env[key]`（Turbopack 不會替換）。
+- **Middleware**：Next.js middleware 寫在 `src/proxy.ts`（非 `middleware.ts`）。
+- **不要新增 ORM**（Prisma / Drizzle 等）—— 一律用 `@supabase/supabase-js` query builder。
+- **不要把 `SUPABASE_SERVICE_ROLE_KEY` / `POE_API_KEY` 放進 `NEXT_PUBLIC_*`**。
+- **路徑別名**：`@/* → src/*`，import 一律使用 `@/...`。
+
+## 修改流程預設
+1. 動到資料表 → 同步：`migration SQL` + `src/types/database.ts` + 相關 RLS policy
+2. 寫 Server Action → 開頭 `requireAdmin()`、結尾 `revalidatePath()`
+3. 跨權限資源（storage / 跳過 RLS）→ 用 `createSupabaseAdminClient()`，且**只能在 server**
