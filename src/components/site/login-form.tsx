@@ -48,6 +48,7 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/";
+  const authError = searchParams.get("error");
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -120,6 +121,12 @@ export function LoginForm() {
 
   return (
     <div className="space-y-4">
+      {authError && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+          登入失敗：{authError}
+        </div>
+      )}
+
       <Button
         type="button"
         variant="outline"
