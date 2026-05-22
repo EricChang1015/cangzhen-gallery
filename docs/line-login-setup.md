@@ -75,7 +75,7 @@ LINE Web 登入回傳的 **ID Token 使用 HS256 對稱簽章**（用 channel se
    | Authorization URL | `https://access.line.me/oauth2/v2.1/authorize` |
    | Token URL | `https://api.line.me/oauth2/v2.1/token` |
    | UserInfo URL | `https://api.line.me/oauth2/v2.1/userinfo` |
-   | Scopes | `profile`（若已申請通過 Email 權限可加 `email`） |
+   | Scopes | `openid profile`（若已申請通過 Email 權限可加 `email`）。**`openid` 必填**，因為 LINE 的 `oauth2/v2.1/userinfo` 是 OIDC userinfo 端點，沒有 `openid` access token 無權呼叫，會導致 `Error getting user profile from external provider` |
    | Allow users without email (`email_optional`) | **ON** |
    | PKCE | **ON**（與前端 `signInWithOAuth` 行為一致） |
 
@@ -124,7 +124,7 @@ Supabase Dashboard → **Authentication → URL Configuration**：
 
 | 訊息 | 原因 | 解法 |
 |---|---|---|
-| `Error getting user profile from external provider` | provider 設為 OIDC，ID Token HS256 無法驗證；或 Email scope 要求但 LINE 沒回傳 | 改 OAuth2 類型 + 開 `email_optional` |
+| `Error getting user profile from external provider` | (a) provider 設為 OIDC，ID Token HS256 無法驗證；(b) scope 沒帶 `openid`，access token 無權打 `oauth2/v2.1/userinfo`；(c) Email scope 要求但 LINE 沒回傳 | 改 OAuth2 類型 + scopes 含 `openid profile` + 開 `email_optional` |
 | `redirect_uri does not match` | LINE channel 沒設正確 callback URL | 加入 `<SUPABASE_URL>/auth/v1/callback` |
 | `invalid_client` | Channel ID / Secret 錯誤 | 重新從 LINE Console 複製 |
 | `provider is not enabled` | Supabase 那邊還沒按 Enable | 進 Dashboard 啟用 |

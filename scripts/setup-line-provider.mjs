@@ -80,7 +80,11 @@ const providerPayload = {
   authorization_url: "https://access.line.me/oauth2/v2.1/authorize",
   token_url: "https://api.line.me/oauth2/v2.1/token",
   userinfo_url: "https://api.line.me/oauth2/v2.1/userinfo",
-  scopes: ["profile"],
+  // LINE 的 /oauth2/v2.1/userinfo 是 OIDC userinfo 端點，必須帶 `openid` scope 才能存取，
+  // 沒有 openid 會在 callback 階段拿到 "Error getting user profile from external provider"。
+  // 即使是 OAuth2（非 OIDC）provider type，Supabase 不會去驗 ID Token 簽章，只用 access token
+  // 呼叫 userinfo_url，所以加上 openid 並不會觸發 HS256 簽章驗證問題。
+  scopes: ["openid", "profile"],
   email_optional: true,
   enabled: true,
   pkce_enabled: true,
