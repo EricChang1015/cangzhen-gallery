@@ -102,14 +102,17 @@ async function request(method, url, body) {
   return { ok: res.ok, status: res.status, data };
 }
 
+// Supabase 期待 URL path 內的 identifier 保留字面字串（含冒號），
+// 不能用 encodeURIComponent（會把 ':' 變成 '%3A' 導致 validation_failed）。
+// 因為 identifier 規格為 `custom:` + [a-z0-9-]+，沒有需要 percent-encode 的字元，
+// 直接拼字串即可。
+const ITEM_URL = `${BASE}/${IDENTIFIER}`;
+
 async function main() {
   console.log(`[setup-line-provider] 目標：${SUPABASE_URL}`);
   console.log(`[setup-line-provider] 檢查 ${IDENTIFIER} 是否存在…`);
 
-  const get = await request(
-    "GET",
-    `${BASE}/${encodeURIComponent(IDENTIFIER)}`,
-  );
+  const get = await request("GET", ITEM_URL);
 
   if (get.status === 404) {
     console.log("[setup-line-provider] 未發現 → 執行建立");
@@ -126,11 +129,7 @@ async function main() {
   }
 
   console.log("[setup-line-provider] 已存在 → 執行更新");
-  const updated = await request(
-    "PUT",
-    `${BASE}/${encodeURIComponent(IDENTIFIER)}`,
-    providerPayload,
-  );
+  const updated = await request("PUT", ITEM_URL, providerPayload);
   if (!updated.ok) {
     fail(`更新失敗 (HTTP ${updated.status})：${JSON.stringify(updated.data)}`);
   }
