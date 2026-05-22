@@ -67,7 +67,46 @@ after insert on auth.users
 for each row execute function public.handle_new_user();
 
 -- =============================================================
--- 回填既有 profile（display_name / avatar_url 為 NULL 的 row）
+-- 補建：對任何尚未有 profile row 的 auth.users 跑一次新 trigger 邏輯
+-- （LINE 使用者於原 trigger 雖然沒報錯，但實際也可能因為其他舊 trigger 行為導致漏建）
+-- =============================================================
+insert into public.profiles (id, display_name, avatar_url, role)
+select
+  u.id,
+  coalesce(
+    nullif(
+      coalesce(
+        u.raw_user_meta_data->>'display_name',
+        u.raw_user_meta_data->>'full_name',
+        u.raw_user_meta_data->>'name',
+        u.raw_user_meta_data->>'preferred_username',
+        u.raw_user_meta_data->>'nickname',
+        u.raw_user_meta_data->>'user_name',
+        nullif(split_part(coalesce(u.email, ''), '@', 1), '')
+      ),
+      ''
+    ),
+    case
+      when (u.raw_user_meta_data->>'iss') ilike '%line%' then 'LINE 用戶 '
+      else '用戶 '
+    end || right(replace(u.id::text, '-', ''), 6)
+  ),
+  nullif(
+    coalesce(
+      u.raw_user_meta_data->>'avatar_url',
+      u.raw_user_meta_data->>'picture',
+      u.raw_user_meta_data->>'picture_url'
+    ),
+    ''
+  ),
+  'guest'::public.user_role
+from auth.users u
+left join public.profiles p on p.id = u.id
+where p.id is null
+on conflict (id) do nothing;
+
+-- =============================================================
+-- 回填：display_name / avatar_url 為 NULL 的既有 profile row
 -- =============================================================
 update public.profiles p
 set
