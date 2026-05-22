@@ -6,11 +6,13 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/";
   const error = searchParams.get("error");
+  const errorCode = searchParams.get("error_code");
   const errorDescription = searchParams.get("error_description");
 
   if (error) {
     const loginUrl = new URL("/login", origin);
     loginUrl.searchParams.set("error", errorDescription || error);
+    if (errorCode) loginUrl.searchParams.set("error_code", errorCode);
     return NextResponse.redirect(loginUrl.toString());
   }
 
